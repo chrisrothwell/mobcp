@@ -1,0 +1,23 @@
+{
+  "name": "mobilus",
+  "version": "1.0.0",
+  "description": "",
+  "main": "handler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1028.0",
+    "body-parser": "^1.19.0",
+    "dayjs": "^1.10.7",
+    "express": "^4.17.1",
+    "nanoid": "^3.1.30",
+    "puppeteer": "^11.0.0",
+    "serverless-http": "^2.7.0"
+  },
+  "devDependencies": {
+    "serverless-dynamodb-local": "^0.2.40"
+  }
+}

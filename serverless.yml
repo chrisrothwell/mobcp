@@ -93,6 +93,11 @@ functions:
       - http:
          path: /{proxy+}
          method: ANY
+  cron:
+    handler: cron.dailySchedule
+    events:
+      - schedule: cron(0 2 * * ? *)
+      - schedule: cron(0 1 * * ? *)
   hello:
     handler: handler.hello
 #    The following are a few example events you can configure

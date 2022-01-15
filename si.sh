@@ -1,2 +1,2 @@
-cp /media/sf_Share/mobcp/* .
+# cp /media/sf_Share/mobcp/* .
 sls offline start

@@ -2,11 +2,7 @@ const serverless = require('serverless-http');
 const bodyParser = require('body-parser')
 const dayjs = require('dayjs')
 const customParseFormat = require('dayjs/plugin/customParseFormat')
-const utc = require('dayjs/plugin/utc')
-const timezone = require('dayjs/plugin/timezone')
 dayjs.extend(customParseFormat)
-dayjs.extend(utc)
-dayjs.extend(timezone)
 
 const express = require('express');
 const { getMaxListeners } = require('process');
@@ -18,10 +14,6 @@ const cron = require('./cron.js') // temporary
 
 app.use(bodyParser.json());
 let jsonParser = bodyParser.json()
-
-app.get('/test', function (req, res) {
-  res.send('Hello World!')
-})
 
 app.delete('/queue', jsonParser, async (req, res) => {
     const {nid} = req.body
@@ -44,6 +36,12 @@ app.delete('/queue', jsonParser, async (req, res) => {
 
 app.post('/queue', jsonParser, async (req, res) => {
     const {classDate, classTime, className, mboUsername, mboPassword} = req.body
+
+    if (!classDate || !classTime || !className || !mboUsername || !mboPassword ) {
+        console.log('Missing required parameter, received ', req.body)
+        res.status(400).json({ error: 'Missing required parameter' })
+        return null
+    }
 
     //Validate the date & time
     d = classDate.substr(4) + ' ' + classTime.substr(0,7)
@@ -123,7 +121,7 @@ app.get('/classes/:ddmmyyyy', async (req, res) => {
 })
 
 app.get('/cron', async (req, res) => {
-    //TEMPORARY
+// To manually trigger the cron if required
     try {
         let output = cron.dailySchedule()
         res.status(200).json(output)
@@ -134,3 +132,4 @@ app.get('/cron', async (req, res) => {
 })
 
 module.exports.handler = serverless(app);
+

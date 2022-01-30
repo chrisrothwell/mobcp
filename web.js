@@ -7,6 +7,8 @@ dayjs.extend(customParseFormat)
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
+const q = require('./queue.js');
+
 const startBooking = {
     'daysBefore': 3,
     'timeReleasedHr': 9,
@@ -26,9 +28,10 @@ async function getClasses(formattedDate) {
     //Formatted date is in MBO format i.e. 1/1/2022 or 12/12/2022
 
     const browser = await puppeteer.launch({
-        headless: false
+        headless: true
     });
     const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36')
     await page.goto(urls.notstaff);
     await page.waitForSelector('#tabA7', { visible: true, timeout: 10000 })
     await page.click('#tabA7')
@@ -52,12 +55,11 @@ async function getClasses(formattedDate) {
     const classTableHTML = await page.evaluate(() => document.querySelector('#classSchedule-mainTable').outerHTML)
     const tableRows = classTableHTML.split('</tr>')
     console.log(tableRows.length, 'records fetched')
-
-    return processClassTable(tableRows)
     await browser.close();
+    return processClassTable(tableRows)
 }
 
-function checkBookingValidity(bookingDetails) {
+/*function checkBookingValidity(bookingDetails) {
     const b = bookingDetails
     console.log('Checking validity for ', b)
     let startAfter = dayjs(b.parsedDT).subtract(startBooking.daysBefore, 'days').hour(startBooking.timeReleasedHr).minute(startBooking.timeReleasedMin).subtract(startBooking.minsBeforeRelease, 'minutes')
@@ -71,7 +73,7 @@ function checkBookingValidity(bookingDetails) {
     } else {
         return 'Valid'
     }
-}
+}*/
 
 async function book(bookingDetails) {
     const b = bookingDetails
@@ -80,9 +82,10 @@ async function book(bookingDetails) {
     const retryUntil = dayjs().add(startBooking.retryTimeoutMins,'minutes')
 
     const browser = await puppeteer.launch({
-        headless: false
+        headless: true
     });
     const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36')
     await page.goto(urls.notstaff);
     console.log('waiting for selector')
     await page.waitForSelector('#su1UserName', { visible: true, timeout: 10000 })
@@ -99,8 +102,8 @@ async function book(bookingDetails) {
     await Promise.race(loginPromises)
     const loginError = await page.evaluate(() => document.querySelector('#LoginError')?.textContent)
     if ( loginError === "The email or password you entered is incorrect.") {
-        updateNidStatus(nid, 'INVALID CREDENTIALS')
-        removeFromQueue(nid)
+        q.updateNidStatus(b.nid, 'INVALID CREDENTIALS')
+        q.removeFromQueue(b.nid)
         await browser.close();
         return null
     }
@@ -143,14 +146,14 @@ async function book(bookingDetails) {
     }
     if (matchingClasses < 1) {
         console.log('Class no longer exists')
-        updateNidStatus(nid, 'CLASS NOT FOUND')
-        removeFromQueue(nid)
+        q.updateNidStatus(b.nid, 'CLASS NOT FOUND')
+        q.removeFromQueue(b.nid)
         await browser.close();
         return null
     } else if (matchingClasses > 1) {
         console.log('Duplicate classes on page')
-        updateNidStatus(nid, 'DUPLICATE IN MB')
-        removeFromQueue(nid)
+        q.updateNidStatus(b.nid, 'DUPLICATE IN MB')
+        q.removeFromQueue(b.nid)
         await browser.close();
         return null
     }
@@ -168,7 +171,7 @@ async function book(bookingDetails) {
                 console.log('found the class on the page', thisClass)
                 if (!thisClass?.id) {
                     console.log('button not found, will retry until',retryUntil.tz('Asia/Singapore').format())
-                    updateNidStatus(nid, 'AWAITING RELEASE')
+                    q.updateNidStatus(nid, 'AWAITING RELEASE')
                     await delay(2000)
                     try {
                         await page.reload()
@@ -181,8 +184,8 @@ async function book(bookingDetails) {
                     
                 } else if (thisClass?.slots < 1) {
                     console.log('no slots for this booking')
-                    updateNidStatus(nid, 'NO SLOTS')
-                    removeFromQueue(nid)
+                    q.updateNidStatus(b.nid, 'NO SLOTS')
+                    q.removeFromQueue(b.nid)
                     await browser.close();
                     return null
                 } else {
@@ -192,8 +195,8 @@ async function book(bookingDetails) {
                     await page.waitForSelector('#SubmitEnroll2', { visible: true, timeout: 10000 })
                     await page.click('#SubmitEnroll2')
                     await page.waitForSelector('#notifyBooking', { visible: true, timeout: 10000 })
-                    updateNidStatus(nid, 'CONFIRMED')
-                    removeFromQueue(nid)
+                    q.updateNidStatus(b.nid, 'CONFIRMED')
+                    q.removeFromQueue(b.nid)
                     await browser.close();
                     return null
                 }
@@ -202,7 +205,7 @@ async function book(bookingDetails) {
     }
 
     console.log('timed out, user may retry')
-    updateNidStatus(nid, 'TIMEOUT')
+    q.updateNidStatus(b.nid, 'TIMEOUT')
     await browser.close();
     return null
 }
@@ -226,6 +229,10 @@ function processClassTable(tableRows) {
             let thisClass = new Object()
             thisClass.date = strDate
             rowData = row.split('</td>')
+            if (rowData.length <= 2) {
+                console.log('No classes for ', strDate)
+                continue
+            }
             //TD0 - time
             timeStart = rowData[0].indexOf('&nbsp;')
             thisClass.time = rowData[0].substr(timeStart).replace(/&nbsp;/g, '')
@@ -248,6 +255,9 @@ function processClassTable(tableRows) {
             } else {
                 thisClass.coach = rowData[3].replace('<td>', '')
             }
+            if (rowData[3].indexOf('Cancelled Today') !== -1) {
+                thisClass.coach = 'Cancelled Today'
+            }
             //TD4 - assistant
             //TD5 - 2nd assistant
             //TD6 - room
@@ -266,4 +276,5 @@ function processClassTable(tableRows) {
     });
  }
 
- module.exports = {getClasses, checkBookingValidity, book}
+ module.exports = {getClasses, book}
+ //module.exports = {checkBookingValidity}

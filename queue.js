@@ -23,10 +23,10 @@ if (IS_OFFLINE === 'true') {
 };
 
 const startBooking = {
-    'daysBefore': 3,
+    'daysBefore': 2,
     'timeReleasedHr': 9,
     'timeReleasedMin': 0,
-    'minsBeforeRelease': 5,
+    'minsBeforeRelease': 0,
     'retryTimeoutMins': 1
 }
 
@@ -185,11 +185,11 @@ async function getQueue() {
     let classesBefore
     console.log(startBooking)
     if ( today.hour() >= startBooking.timeReleasedHr && today.minute() >= startBooking.timeReleasedMin - startBooking.minsBeforeRelease ) {
-        console.log('trying to add days ', startBooking.days)
-        classesBefore = dayjs().tz('Asia/Singapore').add(startBooking.days, 'day')
+        console.log('trying to add days ', startBooking.daysBefore)
+        classesBefore = dayjs().tz('Asia/Singapore').endOf('day').add(startBooking.daysBefore, 'day')
     } else {
-        console.log('trying to add days ', startBooking.days - 1)
-        classesBefore = dayjs().tz('Asia/Singapore').add(startBooking.days - 1, 'day')
+        console.log('trying to add days ', startBooking.daysBefore - 1)
+        classesBefore = dayjs().tz('Asia/Singapore').endOf('day').add(startBooking.daysBefore - 1, 'day')
     }
     
     console.log('today is', today.format(), ' eligible to book classes starting before ', classesBefore.format())
@@ -229,6 +229,7 @@ async function getQueue() {
     console.log('adding to db')
     console.log(params)
     let addDB = await dynamoDb.put(params).promise()
+    console.log('added to db ', addDB)
 
     //Add to Queue & Update Queue Status
     
@@ -236,9 +237,9 @@ async function getQueue() {
     let addResp = await addToQueue(nid)
     console.log('add to queue finished')
     console.log(addResp)
-    console.log('trying to update status')
-    let updStatus = await updateStatus()
-    console.log(updStatus)
+    //console.log('trying to update status')
+    //let updStatus = await updateStatus()
+    //console.log(updStatus)
 
     //if successful, return the details.
     return {
@@ -247,4 +248,4 @@ async function getQueue() {
     }
  }
 
- module.exports = {getQueue, getQueueDetails, getBookingDetails, removeFromQueue, clearQueue, newBooking, getBookableQItems}
+ module.exports = {getQueue, getQueueDetails, getBookingDetails, removeFromQueue, clearQueue, newBooking, getBookableQItems, updateNidStatus}

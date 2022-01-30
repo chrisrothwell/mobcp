@@ -9,6 +9,7 @@ dayjs.extend(utc)
 dayjs.extend(timezone)
 
 const q = require('./queue.js');
+const notif = require('./notify.js')
 
 const startBooking = {
     'daysBefore': 3,
@@ -206,6 +207,7 @@ async function book(bookingDetails) {
                     await page.waitForSelector('#notifyBooking', { visible: true, timeout: 10000 })
                     q.updateNidStatus(b.nid, 'CONFIRMED')
                     q.removeFromQueue(b.nid)
+                    notif.confirmed(b)
                     await browser.close();
                     return new Promise(resolve => {resolve(b.nid)})
                 }

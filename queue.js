@@ -8,6 +8,8 @@ dayjs.extend(customParseFormat)
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
+const notif = require('./notify.js')
+
 const DYTBL = process.env.DYTBL;
 const IS_OFFLINE = process.env.IS_OFFLINE;
 
@@ -70,18 +72,6 @@ async function getQueue() {
     };
 
     console.log(params)
-    let query = await dynamoDb.get(params).promise()
-    return new Promise(resolve => {resolve(query.Item)})
- }
-
- async function getStatus() {
-    const params = {
-        TableName: DYTBL,
-        Key: {
-            nid: 'STATUS',
-        },
-    };
-
     let query = await dynamoDb.get(params).promise()
     return new Promise(resolve => {resolve(query.Item)})
  }
@@ -241,10 +231,12 @@ async function getQueue() {
     //let updStatus = await updateStatus()
     //console.log(updStatus)
 
-    //if successful, return the details.
+    let booking = await getBookingDetails(nid)
+    if (booking.pStatus === 'QUEUED') { notif.queued(booking) }
+
+    //return the details.
     return {
-        'booking': await getBookingDetails(nid),
-        'status': await getStatus()
+        'booking': booking
     }
  }
 

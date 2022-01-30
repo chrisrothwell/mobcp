@@ -15,10 +15,11 @@
     "dayjs": "^1.10.7",
     "express": "^4.17.1",
     "nanoid": "^3.1.30",
-    "puppeteer": "^13.1.2",
+    "puppeteer-core": "^13.1.2",
     "serverless-http": "^2.7.0"
   },
   "devDependencies": {
+    "puppeteer": "^13.1.2",
     "serverless-dynamodb-local": "^0.2.40",
     "serverless-offline": "^8.3.1"
   }

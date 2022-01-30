@@ -123,8 +123,8 @@ app.get('/classes/:ddmmyyyy', async (req, res) => {
 app.get('/cron', async (req, res) => {
 // To manually trigger the cron if required
     try {
-        let output = cron.dailySchedule()
-        res.status(200).json(output)
+        let output = await cron.dailySchedule()
+        res.status(200).send()
     } catch(err) {
         res.status(400).json({ error: err.message });
         return null

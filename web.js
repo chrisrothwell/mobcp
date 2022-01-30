@@ -158,13 +158,13 @@ async function book(bookingDetails) {
         q.updateNidStatus(b.nid, 'CLASS NOT FOUND')
         q.removeFromQueue(b.nid)
         await browser.close();
-        return null
+        return new Promise(reject => {reject(new Error('Class Not Found'))})
     } else if (matchingClasses > 1) {
         console.log('Duplicate classes on page')
         q.updateNidStatus(b.nid, 'DUPLICATE IN MB')
         q.removeFromQueue(b.nid)
         await browser.close();
-        return null
+        return new Promise(reject => {reject(new Error('Ambiguous classes to book'))})
     }
 
     while (dayjs().isBefore(retryUntil)) {
@@ -196,7 +196,7 @@ async function book(bookingDetails) {
                     q.updateNidStatus(b.nid, 'NO SLOTS')
                     q.removeFromQueue(b.nid)
                     await browser.close();
-                    return null
+                    return new Promise(reject => {reject(new Error('No slots available'))})
                 } else {
                     console.log('attempting booking')
                     await page.click(`[name="${thisClass.id}"]`)
@@ -207,7 +207,7 @@ async function book(bookingDetails) {
                     q.updateNidStatus(b.nid, 'CONFIRMED')
                     q.removeFromQueue(b.nid)
                     await browser.close();
-                    return null
+                    return new Promise(resolve => {resolve(b.nid)})
                 }
             }
         }
@@ -216,7 +216,7 @@ async function book(bookingDetails) {
     console.log('timed out, user may retry')
     q.updateNidStatus(b.nid, 'TIMEOUT')
     await browser.close();
-    return null
+    return new Promise(reject => {reject(new Error('Timeout waiting for web page'))})
 }
 
 function processClassTable(tableRows) {

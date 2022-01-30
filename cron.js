@@ -4,17 +4,25 @@ const q = require('./queue.js');
 
 async function dailySchedule() {
     const bookable = await q.getBookableQItems()
+    let promiseArray = []
+    let promiseResult
 
     for (booking of bookable) {
-        console.log('attempting to book ', booking)
-        try {
-            web.book(booking)
-        } catch (e) {
-            console.log('Error trying to book', e)
-        }
-        
+        console.log('adding to promise array ', booking)
+        promiseArray.push(web.book(booking))
     }
-    return bookable
+
+    console.log('running the following functions in parallel', promiseArray, 'length', promiseArray.length)
+
+    if (promiseArray.length > 0) {
+        promiseResult = await Promise.all(promiseArray)
+        console.log('Finished running all bookings ', promiseResult)
+    } else {
+        console.log('No promises to run')
+        throw new Error('No classes to book.')
+    }
+
+    return promiseResult
 }
 
 module.exports = {dailySchedule}

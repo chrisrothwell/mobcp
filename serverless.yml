@@ -45,13 +45,14 @@ functions:
       - http:
          path: /{proxy+}
          method: ANY
+    timeout: 30
   cron:
     handler: cron.dailySchedule
     events:
       - schedule: cron(0 1 * * ? *)
       - schedule: cron(5 1 * * ? *)
       - schedule: cron(10 1 * * ? *)
-
+    timeout: 300
 resources:
   Resources:
     UsersDynamoDBTable:

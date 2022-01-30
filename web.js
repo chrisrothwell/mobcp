@@ -83,7 +83,7 @@ async function getClasses(formattedDate) {
 
 async function book(bookingDetails) {
     const b = bookingDetails
-    console.log('begin booking for ', b)
+    console.log('begin booking for ', b, 'at', dayjs().format())
 
     const retryUntil = dayjs().add(startBooking.retryTimeoutMins,'minutes')
 
@@ -114,6 +114,7 @@ async function book(bookingDetails) {
     if ( loginError === "The email or password you entered is incorrect.") {
         q.updateNidStatus(b.nid, 'INVALID CREDENTIALS')
         q.removeFromQueue(b.nid)
+        notif.failed(b, 'INVALID CREDENTIALS')
         await browser.close();
         return null
     }
@@ -158,12 +159,14 @@ async function book(bookingDetails) {
         console.log('Class no longer exists')
         q.updateNidStatus(b.nid, 'CLASS NOT FOUND')
         q.removeFromQueue(b.nid)
+        notif.failed(b, 'CLASS NOT FOUND')
         await browser.close();
         return new Promise(reject => {reject(new Error('Class Not Found'))})
     } else if (matchingClasses > 1) {
         console.log('Duplicate classes on page')
         q.updateNidStatus(b.nid, 'DUPLICATE IN MB')
         q.removeFromQueue(b.nid)
+        notif.failed(b, 'DUPLICATE IN MB')
         await browser.close();
         return new Promise(reject => {reject(new Error('Ambiguous classes to book'))})
     }
@@ -181,7 +184,7 @@ async function book(bookingDetails) {
                 console.log('found the class on the page', thisClass)
                 if (!thisClass?.id) {
                     console.log('button not found, will retry until',retryUntil.tz('Asia/Singapore').format())
-                    q.updateNidStatus(nid, 'AWAITING RELEASE')
+                    q.updateNidStatus(b.nid, 'AWAITING RELEASE')
                     await delay(2000)
                     try {
                         await page.reload()
@@ -196,6 +199,7 @@ async function book(bookingDetails) {
                     console.log('no slots for this booking')
                     q.updateNidStatus(b.nid, 'NO SLOTS')
                     q.removeFromQueue(b.nid)
+                    notif.failed(b, 'NO SLOTS')
                     await browser.close();
                     return new Promise(reject => {reject(new Error('No slots available'))})
                 } else {
@@ -215,10 +219,11 @@ async function book(bookingDetails) {
         }
     }
 
-    console.log('timed out, user may retry')
-    q.updateNidStatus(b.nid, 'TIMEOUT')
+    console.log('booking button not available after several retries.  item remains on queue and can be retried')
+    q.updateNidStatus(b.nid, 'NO BUTTON')
+    notif.failed(b, 'NO BUTTON')
     await browser.close();
-    return new Promise(reject => {reject(new Error('Timeout waiting for web page'))})
+    return new Promise(reject => {reject(new Error('No booking button available after multiple retries'))})
 }
 
 function processClassTable(tableRows) {

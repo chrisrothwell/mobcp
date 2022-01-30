@@ -112,4 +112,23 @@ async function confirmed(booking) {
     );
 }
 
-module.exports = {queued, confirmed}
+async function failed(booking, reason) {
+    console.log('Sending notification for failed booking')
+    const b = booking
+    
+    transporter.sendMail(
+        {
+            from: "mobcp@chrisrothwell.com",
+            to: recipients,
+            subject: "Booking failed - " + reason,
+            text: JSON.stringify(b) + ' ' + inviteDefault.urlBase + b.nid
+        },
+        (err, info) => {
+            if (err) { throw err }
+            console.log(info.envelope);
+            console.log(info.messageId);
+            return(info.messageId)
+        }
+    );
+}
+module.exports = {queued, confirmed, failed}

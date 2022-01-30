@@ -38,6 +38,10 @@ provider:
   environment:
     DYTBL: ${self:custom.DYTBL}
 
+package:
+  exclude:
+    - node_modules/puppeteer/.local-chromium/**
+
 functions:
   app:
     handler: index.handler
@@ -73,3 +77,4 @@ resources:
 plugins:
   - serverless-dynamodb-local
   - serverless-offline
+#  - serverless-plugin-chrome

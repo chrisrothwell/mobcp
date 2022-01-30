@@ -1,4 +1,5 @@
-const puppeteer = require('puppeteer');
+//const puppeteer = require('puppeteer');
+const chromium = require('chrome-aws-lambda');
 const dayjs = require('dayjs')
 const customParseFormat = require('dayjs/plugin/customParseFormat')
 const utc = require('dayjs/plugin/utc')
@@ -27,9 +28,7 @@ const urls = {
 async function getClasses(formattedDate) {
     //Formatted date is in MBO format i.e. 1/1/2022 or 12/12/2022
 
-    const browser = await puppeteer.launch({
-        headless: true
-    });
+    const browser = await chromium.puppeteer.launch()
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36')
     await page.goto(urls.notstaff);
@@ -81,9 +80,7 @@ async function book(bookingDetails) {
 
     const retryUntil = dayjs().add(startBooking.retryTimeoutMins,'minutes')
 
-    const browser = await puppeteer.launch({
-        headless: true
-    });
+    const browser = await chromium.puppeteer.launch()
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36')
     await page.goto(urls.notstaff);

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MobCP Bot</title>
+    <script src='index.js' defer></script>
+  </head>
+  <body onload="onLoad()">
+    <p>MobCP Booking Bot</p>
+    <hr>
+    <label for="start">Select date:</label>
+    <input type="date" id="ddmmyyyy" name="ddmmyyyy" value="2022-01-01" min="2022-01-01">
+    <button type="button" id="classBtn" onclick="fetchClasses()">Get Classes</button>
+    <div id='classes'></div>
+    <hr>
+    <div id='addToQueue'></div>
+    <p>Add a class to the queue (click a button above and click Submit)</p>
+    <form>
+        <label for="fname">Class Date:</label>
+        <input type="text" id="cdate" name="cdate" disabled><br>
+        <label for="lname">Class Time:</label>
+        <input type="text" id="ctime" name="ctime" disabled><br>
+        <label for="fname">Class Name:</label>
+        <input type="text" id="cname" name="cname" disabled><br>
+        <label for="lname">MBO Username:</label>
+        <input type="text" id="mboUn" name="mboUn" value="rothwell.chris@gmail.com"><br>
+        <label for="lname">MBO Password:</label>
+        <input type="text" id="mboPw" name="mboPw" value="tFdNJE+eDJ9d+9i"><br>
+        <button type="button" id="classBtn" onclick="addToQueue()">Add to Queue</button>
+    </form>
+    <hr>
+    <p>Click below to view the classes in the queue.</p>
+    <button type="button" id="showQueueBtn" onclick="fetchQueue()">Show Queue</button>
+    <div id='queue'></div>
+  </body>
+</html>

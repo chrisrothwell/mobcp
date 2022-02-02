@@ -19,7 +19,7 @@ async function dailySchedule() {
         console.log('Finished running all bookings ', promiseResult)
     } else {
         console.log('No promises to run')
-        throw new Error('No classes to book.')
+        promiseResult = 'No output'
     }
 
     return promiseResult

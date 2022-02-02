@@ -131,4 +131,30 @@ async function failed(booking, reason) {
         }
     );
 }
-module.exports = {queued, confirmed, failed}
+
+async function test() {
+    console.log('Sending test notification')
+    
+    transporter.sendMail(
+        {
+            from: "mobcp@chrisrothwell.com",
+            to: recipients,
+            subject: "Test Notification",
+            text: `This is a test notification.
+            
+            Recipients:
+            ${JSON.stringify(recipients)}
+            
+            Invite Defaults:
+            ${JSON.stringify(inviteDefault)}
+            
+            `
+        },
+        (err, info) => {
+            if (err) { throw err }
+            console.log(info.envelope);
+            console.log(info.messageId);
+        }
+    );
+}
+module.exports = {queued, confirmed, failed, test}

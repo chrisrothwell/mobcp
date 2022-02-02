@@ -10,7 +10,8 @@ const app = express()
 
 const web = require('./web.js')
 const q = require('./queue.js')
-const cron = require('./cron.js') // temporary
+const cron = require('./cron.js') // for manual triggering
+const notify = require('./notify.js') // for manual triggering
 
 app.use(bodyParser.json());
 let jsonParser = bodyParser.json()
@@ -120,10 +121,22 @@ app.get('/classes/:ddmmyyyy', async (req, res) => {
     return null
 })
 
-app.get('/cron', async (req, res) => {
+app.get('/test/cron', async (req, res) => {
 // To manually trigger the cron if required
     try {
         let output = await cron.dailySchedule()
+        console.log(output)
+        res.status(200).send()
+    } catch(err) {
+        res.status(400).json({ error: err.message });
+        return null
+    }
+})
+
+app.get('/test/notify', async (req, res) => {
+// To manually trigger a test e-mail notification
+    try {
+        await notify.test()
         res.status(200).send()
     } catch(err) {
         res.status(400).json({ error: err.message });

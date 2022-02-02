@@ -33,10 +33,13 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-        - ses:SendEmail
-        - ses:SendRawEmail
       Resource:
         - { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn" ] }
+    - Effect: Allow
+      Action:
+        - ses:SendEmail
+        - ses:SendRawEmail
+      Resource: '*'
   environment:
     DYTBL: ${self:custom.DYTBL}
 

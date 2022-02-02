@@ -63,6 +63,7 @@ async function queued(booking) {
             }
         })
     } catch (e) {
+        console.log(e)
         throw new Error(e)
     }
 
@@ -110,6 +111,7 @@ async function confirmed(booking) {
             }
         })
     } catch (e) {
+        console.log(e)
         throw new Error(e)
     }
 
@@ -132,6 +134,7 @@ async function failed(booking, reason) {
             text: JSON.stringify(b) + ' ' + inviteDefault.urlBase + b.nid
         });
     } catch (e) {
+        console.log(e)
         throw new Error(e)
     }
 
@@ -162,6 +165,7 @@ async function test() {
         }
         );
     } catch (e) {
+        console.log(e)
         throw new Error(e)
     }
 

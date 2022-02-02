@@ -25,7 +25,7 @@ const inviteDefault = {
 }
 
 async function queued(booking) {
-    console.log('Sending notification for unconfirmed booking')
+    console.log('Sending notification for unconfirmed (queued) booking')
     const b = booking
     const ics = ical({
         domain: 'chrisrothwell.com',
@@ -47,7 +47,10 @@ async function queued(booking) {
 
     console.log(JSON.stringify(ics))
 
-    transporter.sendMail(
+    let msgResp
+
+    try {
+        msgResp = await transporter.sendMail(
         {
             from: "mobcp@chrisrothwell.com",
             to: recipients,
@@ -58,14 +61,14 @@ async function queued(booking) {
                 method: 'REQUEST',
                 content: Buffer.from(ics.toString())
             }
-        },
-        (err, info) => {
-            if (err) { throw err }
-            console.log(info.envelope);
-            console.log(info.messageId);
-            return(info.messageId)
-        }
-    );
+        })
+    } catch (e) {
+        throw new Error(e)
+    }
+
+    console.log(msgResp.envelope)
+    console.log(msgResp.messageId)
+    return msgResp.messageId
 }
 
 async function confirmed(booking) {
@@ -91,7 +94,10 @@ async function confirmed(booking) {
 
     console.log(JSON.stringify(ics))
 
-    transporter.sendMail(
+    let msgResp
+
+    try {
+        msgResp = await transporter.sendMail(
         {
             from: "mobcp@chrisrothwell.com",
             to: recipients,
@@ -102,40 +108,44 @@ async function confirmed(booking) {
                 method: 'REQUEST',
                 content: Buffer.from(ics.toString())
             }
-        },
-        (err, info) => {
-            if (err) { throw err }
-            console.log(info.envelope);
-            console.log(info.messageId);
-            return(info.messageId)
-        }
-    );
+        })
+    } catch (e) {
+        throw new Error(e)
+    }
+
+    console.log(msgResp.envelope)
+    console.log(msgResp.messageId)
+    return msgResp.messageId
 }
 
 async function failed(booking, reason) {
     console.log('Sending notification for failed booking')
     const b = booking
+    let msgResp
     
-    transporter.sendMail(
+    try {
+        msgResp = await transporter.sendMail(
         {
             from: "mobcp@chrisrothwell.com",
             to: recipients,
             subject: "Booking failed - " + reason,
             text: JSON.stringify(b) + ' ' + inviteDefault.urlBase + b.nid
-        },
-        (err, info) => {
-            if (err) { throw err }
-            console.log(info.envelope);
-            console.log(info.messageId);
-            return(info.messageId)
-        }
-    );
+        });
+    } catch (e) {
+        throw new Error(e)
+    }
+
+    console.log(msgResp.envelope)
+    console.log(msgResp.messageId)
+    return msgResp.messageId
 }
 
 async function test() {
     console.log('Sending test notification')
-    
-    transporter.sendMail(
+    let msgResp
+
+    try {
+        msgResp = await transporter.sendMail(
         {
             from: "mobcp@chrisrothwell.com",
             to: recipients,
@@ -149,12 +159,14 @@ async function test() {
             ${JSON.stringify(inviteDefault)}
             
             `
-        },
-        (err, info) => {
-            if (err) { throw err }
-            console.log(info.envelope);
-            console.log(info.messageId);
         }
-    );
+        );
+    } catch (e) {
+        throw new Error(e)
+    }
+
+    console.log(msgResp.envelope)
+    console.log(msgResp.messageId)
+    return msgResp.messageId
 }
 module.exports = {queued, confirmed, failed, test}

@@ -136,8 +136,48 @@ app.get('/test/cron', async (req, res) => {
 app.get('/test/notify', async (req, res) => {
 // To manually trigger a test e-mail notification
     try {
-        await notify.test()
-        res.status(200).send()
+        let output = await notify.test()
+        res.status(200).send(output)
+        return null
+    } catch(err) {
+        res.status(400).json({ error: err.message });
+        return null
+    }
+})
+
+app.get('/test/notify/queued/:booking', async (req, res) => {
+// To manually trigger a queued e-mail notification
+    try {
+        let b = await q.getBookingDetails(req.params.booking)
+        let output = await notify.queued(b)
+        res.status(200).send(output)
+        return null
+    } catch(err) {
+        res.status(400).json({ error: err.message });
+        return null
+    }
+})
+
+app.get('/test/notify/confirmed/:booking', async (req, res) => {
+// To manually trigger a confirmed e-mail notification
+    try {
+        let b = await q.getBookingDetails(req.params.booking)
+        let output = await notify.confirmed(b)
+        res.status(200).send(output)
+        return null
+    } catch(err) {
+        res.status(400).json({ error: err.message });
+        return null
+    }
+})
+
+app.get('/test/notify/failed/:booking', async (req, res) => {
+// To manually trigger a failed e-mail notification
+    try {
+        let b = await q.getBookingDetails(req.params.booking)
+        let output = await notify.failed(b, 'TEST FAILURE')
+        res.status(200).send(output)
+        return null
     } catch(err) {
         res.status(400).json({ error: err.message });
         return null

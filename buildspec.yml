@@ -1,6 +1,20 @@
 version: 0.1
 
 phases:
+  install:
+    commands:
+      - npm install --silent --no-progress -g npm
+      - npm install --silent --no-progress -g serverless
   pre_build:
     commands:
       - npm install --no-progress --silent
+  build:
+    commands:
+      - mkdir -p target/dev
+      - serverless package --package target/dev --stage dev
+      
+artifacts:
+  files:
+    - target/**/*
+    - serverless.yml
+    - deploy.sh

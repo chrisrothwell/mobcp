@@ -5,7 +5,7 @@ const customParseFormat = require('dayjs/plugin/customParseFormat')
 dayjs.extend(customParseFormat)
 
 const express = require('express');
-var cors = require('cors')
+//var cors = require('cors')
 const { getMaxListeners } = require('process');
 const app = express()
 
@@ -20,7 +20,7 @@ const cron = require('./cron.js') // for manual triggering
 const notify = require('./notify.js') // for manual triggering
 
 app.use(bodyParser.json());
-app.use(cors())
+//app.use(cors())
 let jsonParser = bodyParser.json()
 
 app.delete('/queue', jsonParser, async (req, res) => {

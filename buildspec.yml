@@ -3,4 +3,8 @@ version: 0.1
 phases:
   pre_build:
     commands:
+      - npm i cors
+      - ls
+      - cat package.json
+      - cat package-lock.json
       - npm install --no-progress --silent

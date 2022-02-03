@@ -12,6 +12,8 @@ phases:
     commands:
       - mkdir -p target/dev
       - export SERVERLESS_ACCESS_KEY=AKiTHgfMcZdsxyXA8W2e67xLMFhDM9PvpIAuwHrVvMXMO
+      - echo SERVERLESS_ACCESS_KEY
+      - sls login
       - serverless package --package target/dev --stage dev
       
 artifacts:

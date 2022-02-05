@@ -62,6 +62,18 @@ function addToQueue() {
     })
 }
 
+function remFromQueue(pnid) {
+    fetch(BASE_URL + 'queue/', {
+        method: "DEL",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            nid: pnid
+        })
+    }).then(res => {
+        console.log("Post complete! response:", res)
+    })
+}
+
 function fetchQueue() {
     document.getElementById("showQueueBtn").disabled=true
     document.getElementById("queue").innerText = ""

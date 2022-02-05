@@ -64,7 +64,7 @@ function addToQueue() {
 
 function remFromQueue(pnid) {
     fetch(BASE_URL + 'queue/', {
-        method: "DEL",
+        method: "DELETE",
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
             nid: pnid

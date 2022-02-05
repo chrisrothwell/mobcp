@@ -96,7 +96,7 @@ function showQueue(queue) {
             <td>${queue[qitem].mboPassword}</td>
             <td>${queue[qitem].nid}</td>
             <td>${queue[qitem].pStatus}</td>
-            <td><button type="button" id="removeFromQueue${queue[qitem].nid}" onclick="removeFromQueue('${queue[qitem].nid}')">Remove</button></td>
+            <td><button type="button" id="removeFromQueue${queue[qitem].nid}" onclick="remFromQueue('${queue[qitem].nid}')">Remove</button></td>
         `
         classDiv.append(thisQueue)
     }

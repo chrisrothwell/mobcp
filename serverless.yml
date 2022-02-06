@@ -1,7 +1,7 @@
 service: mobilus
 app: mobilus
 org: chrisrothwell
-frameworkVersion: '2'
+frameworkVersion: '3'
 
 custom:
   DYTBL: 'mob-${self:provider.stage}'

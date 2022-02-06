@@ -11,10 +11,8 @@ phases:
   build:
     commands:
       - mkdir -p target/dev
-      - export SERVERLESS_ACCESS_KEY=AKiTHgfMcZdsxyXA8W2e67xLMFhDM9PvpIAuwHrVvMXMO
-      - export SLS_DEBUG=*
-      - echo $SERVERLESS_ACCESS_KEY
-      - echo $SLS_DEBUG
+      - echo "SLS Access Key: $SERVERLESS_ACCESS_KEY"
+      - echo "SLS Debug Level: $SLS_DEBUG"
       - serverless package --package target/dev --stage dev
       
 artifacts:

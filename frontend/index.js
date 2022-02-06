@@ -26,7 +26,6 @@ function showClasses(classes) {
             <td>${e.name}</td>
             <td>${e.coach}</td>
             <td>${e.duration}</td>
-            <td>${e.slots}</td>
             <td><button type="button" id="popForm${counter}" onclick="popForm('${e.date}', '${e.time}', '${e.name}')">Populate Form</button></td>
         `
         classDiv.append(thisClass)
@@ -59,6 +58,7 @@ function addToQueue() {
         })
     }).then(res => {
         console.log("Post complete! response:", res)
+        fetchQueue()
     })
 }
 
@@ -71,11 +71,11 @@ function remFromQueue(pnid) {
         })
     }).then(res => {
         console.log("Post complete! response:", res)
+        fetchQueue()
     })
 }
 
 function fetchQueue() {
-    document.getElementById("showQueueBtn").disabled=true
     document.getElementById("queue").innerText = ""
     fetch(BASE_URL + 'queue/')
     .then(response => response.json())
@@ -83,7 +83,6 @@ function fetchQueue() {
 }
 
 function showQueue(queue) {
-    document.getElementById("showQueueBtn").disabled=false
     const classDiv = document.querySelector('#queue')
     for (qitem of Object.keys(queue)) {
         console.log()
@@ -105,4 +104,5 @@ function showQueue(queue) {
 function onLoad() {
     let today = new Date()
     document.getElementById("ddmmyyyy").valueAsDate = today
+    fetchQueue()
 }

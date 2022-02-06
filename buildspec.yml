@@ -18,3 +18,5 @@ artifacts:
     - target/**/*
     - serverless.yml
     - deploy.sh
+    - frontend/index.html
+    - frontend/index.js

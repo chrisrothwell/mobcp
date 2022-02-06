@@ -2,9 +2,7 @@ const serverless = require('serverless-http');
 const bodyParser = require('body-parser')
 const dayjs = require('dayjs')
 const customParseFormat = require('dayjs/plugin/customParseFormat')
-const timezone = require('dayjs/plugin/timezone')
 dayjs.extend(customParseFormat)
-dayjs.extend(timezone)
 
 const express = require('express');
 var cors = require('cors')
@@ -54,9 +52,9 @@ app.post('/queue', jsonParser, async (req, res) => {
     }
 
     //Validate the date & time
-    d = classDate.substr(4) + ' ' + classTime.substr(0,7)
+    d = classDate.substr(4) + ' ' + classTime.substr(0,7) + " +08:00"
     console.log('Attempting to parse ', d)
-    let parsedDate = dayjs(d, "D MMMM YYYY h:mm").tz('Asia/Singapore')
+    let parsedDate = dayjs(d, "D MMMM YYYY h:mm Z")
     console.log(parsedDate.format())
     if (parsedDate.isBefore(dayjs())) {
         console.log('Date is before today ', dayjs().format())

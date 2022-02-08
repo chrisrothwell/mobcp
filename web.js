@@ -100,13 +100,24 @@ async function book(bookingDetails) {
 
     const retryUntil = dayjs().add(startBooking.retryTimeoutMins,'minutes')
 
-    const browser = await chromium.puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath,
-        headless: chromium.headless,
-        ignoreHTTPSErrors: true,
-      });
+    let chromiumArgs
+    
+    if (IS_OFFLINE === 'true') {
+        chromiumArgs = {
+            headless: true,
+            ignoreHTTPSErrors: true
+        }
+    } else {
+        chromiumArgs = {
+            args: chromium.args,
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath,
+            headless: chromium.headless,
+            ignoreHTTPSErrors: true
+        }
+    }
+
+    const browser = await chromium.puppeteer.launch(chromiumArgs)
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36')
     await page.goto(urls.notstaff);
@@ -127,7 +138,8 @@ async function book(bookingDetails) {
     if ( loginError === "The email or password you entered is incorrect.") {
         q.updateNidStatus(b.nid, 'INVALID CREDENTIALS')
         q.removeFromQueue(b.nid)
-        notif.failed(b, 'INVALID CREDENTIALS')
+        b.pStatus = 'INVALID CREDENTIALS'
+        notif.failed(b)
         await browser.close();
         return null
     }
@@ -138,31 +150,40 @@ async function book(bookingDetails) {
     const defaultDate = await page.evaluate(() => document.querySelector('#txtDate').value)
     console.log('Default date on MBO is ', defaultDate)
     console.log('Date requested is ', b.parsedDT)
-    const dateHeaders = await page.evaluate(() => {
-        const tds = Array.from(document.querySelectorAll('td'))
-        return tds.map(td => td.innerText.trim())
-    })
     
-    console.log('Looking for ', b.classDate, " in ", dateHeaders)
-    const dateOnPage = dateHeaders.find( (e) => e === b.classDate)
-    if (!dateOnPage) {
+    let classTableHTML = await page.evaluate(() => document.querySelector('#classSchedule-mainTable').outerHTML)
+    let tableRows = classTableHTML.split('</tr>')
+    console.log(tableRows.length, 'records fetched')
+      
+    let classes = processClassTable(tableRows)
+    console.log('found classes')
+    let dateFound
+
+    for (let thisClass of classes) {
+        console.log('checking ', thisClass)
+        if (b.classDate === thisClass.date) {
+            console.log('classes for this date are in the default page')
+            dateFound = true
+        } else {
+            console.log(b.classDate, "not equal to", thisClass.date)
+        }
+    }
+    
+    if (!dateFound) {
         let formatparam = dayjs(b.parsedDT).tz('Asia/Singapore').format('DD/MM/YYYY')
         console.log('Selecting new date...',formatparam)
         await page.evaluate((formatparam) => { document.querySelector('#txtDate').value = formatparam }, formatparam)
         await page.focus('#txtDate')
         await page.keyboard.press('Enter')
         await page.waitForSelector('#classSchedule-mainTable', { visible: true, timeout: 10000 })
-        console.log('Page loaded')
+        console.log('Page reloaded after date change')
+        classTableHTML = await page.evaluate(() => document.querySelector('#classSchedule-mainTable').outerHTML)
+        tableRows = classTableHTML.split('</tr>')
+        classes = processClassTable(tableRows)   
     }
 
-    const classTableHTML = await page.evaluate(() => document.querySelector('#classSchedule-mainTable').outerHTML)
-    const tableRows = classTableHTML.split('</tr>')
-    console.log(tableRows.length, 'records fetched')
-      
-    let classes = processClassTable(tableRows)
-
     let matchingClasses = 0
-    for (thisClass of classes) {
+    for (let thisClass of classes) {
         if (b.classDate === thisClass.date && b.className === thisClass.name && b.classTime === thisClass.time) {
             matchingClasses++
             console.log('found a match')
@@ -173,14 +194,16 @@ async function book(bookingDetails) {
         console.log('Class no longer exists')
         q.updateNidStatus(b.nid, 'CLASS NOT FOUND')
         q.removeFromQueue(b.nid)
-        notif.failed(b, 'CLASS NOT FOUND')
+        b.pStatus='CLASS NOT FOUND'
+        notif.failed(b)
         await browser.close();
         return new Promise(reject => {reject(new Error('Class Not Found'))})
     } else if (matchingClasses > 1) {
         console.log('Duplicate classes on page')
         q.updateNidStatus(b.nid, 'DUPLICATE IN MB')
         q.removeFromQueue(b.nid)
-        notif.failed(b, 'DUPLICATE IN MB')
+        b.pStatus='DUPLICATE IN MB'
+        notif.failed(b)
         await browser.close();
         return new Promise(reject => {reject(new Error('Ambiguous classes to book'))})
     }
@@ -193,7 +216,7 @@ async function book(bookingDetails) {
         
         let classes = processClassTable(tableRows)
 
-        for (thisClass of classes) {
+        for (let thisClass of classes) {
             if (b.classDate === thisClass.date && b.className === thisClass.name && b.classTime === thisClass.time) {
                 console.log('found the class on the page', thisClass)
                 if (!thisClass?.id) {
@@ -210,22 +233,72 @@ async function book(bookingDetails) {
                     }
                     
                 } else if (thisClass?.slots < 1) {
+                    // Slots have recently not been available on MindBodyOnline, so this has not recently been invoking.
                     console.log('no slots for this booking')
                     q.updateNidStatus(b.nid, 'NO SLOTS')
                     q.removeFromQueue(b.nid)
-                    notif.failed(b, 'NO SLOTS')
+                    b.pStatus = 'NO SLOTS'
+                    notif.failed(b)
                     await browser.close();
                     return new Promise(reject => {reject(new Error('No slots available'))})
                 } else {
                     console.log('attempting booking')
                     await page.click(`[name="${thisClass.id}"]`)
                     console.log('button clicked')
-                    await page.waitForSelector('#SubmitEnroll2', { visible: true, timeout: 10000 })
-                    await page.click('#SubmitEnroll2')
-                    await page.waitForSelector('#notifyBooking', { visible: true, timeout: 10000 })
-                    q.updateNidStatus(b.nid, 'CONFIRMED')
-                    q.removeFromQueue(b.nid)
-                    notif.confirmed(b)
+                    
+                    try {
+                        const attemptBookingPromises = [
+                            page.waitForSelector('#SubmitEnroll2', { visible: true, timeout: 10000}),
+                            page.waitForSelector('form[name="frmWaitList"]', { timeout: 10000}),
+                            page.waitForSelector('input[name="AddWLButton"]', { visible: true, timeout: 10000})
+                        ]
+                        await Promise.race(attemptBookingPromises)    
+                    } catch (e) {
+                        console.log('timeout waiting for a recognizable element after clicking the booking button.')
+                        let screenshotPath = b.nid + '-clicked-booking-button.png'
+                        await page.screenshot({ path: screenshotPath });
+                        console.log('check the screenshot at ', screenshotPath)
+                        throw(e)
+                    }
+                    
+                    console.log('one of the promises resolved')
+                    let screenshotPath = b.nid + '-clicked-booking-button.png'
+                    await page.screenshot({ path: screenshotPath });
+                    const isBookable = await page.evaluate(() => document.querySelector('#SubmitEnroll2')?.value)
+                    const isWaitlistable = await page.evaluate(() => document.querySelector('input[name="AddWLButton]')?.value)
+                    if (isBookable) {
+                        await page.click('#SubmitEnroll2')
+                        await page.waitForSelector('#notifyBooking', { visible: true, timeout: 10000 })
+                        q.updateNidStatus(b.nid, 'CONFIRMED')
+                        q.removeFromQueue(b.nid)
+                        b.pStatus = 'CONFIRMED'
+                        notif.confirmed(b)
+                        await browser.close();
+                        return new Promise(resolve => {resolve(b.nid)})
+                    }
+                    
+                    if (isWaitlistable) {
+                        await page.click('input[name="AddWLButton]')
+                        await page.waitForSelector('.myInfoTable', { visible: true, timeout: 10000 })
+                        q.updateNidStatus(b.nid, 'WAITLISTED')
+                        q.removeFromQueue(b.nid)
+                        b.pStatus = 'WAITLISTED'
+                        notif.confirmed(b)
+                        await browser.close();
+                        return new Promise(resolve => {resolve(b.nid)})
+                    }
+                    
+                    if (!isBookable && !isWaitlistable) {
+                        console.log('Not able to book or add to waitlist')
+                        q.updateNidStatus(b.nid, 'NO BOOKING/WAITLIST')
+                        q.removeFromQueue(b.nid)
+                        b.pStatus = 'NO BOOKING/WAITLIST'
+                        notif.failed(b)
+                        await browser.close();
+                        return new Promise(reject => {reject(new Error('No booking/waitlist'))})
+                    }
+                    
+                    //Shouldn't reach here...
                     await browser.close();
                     return new Promise(resolve => {resolve(b.nid)})
                 }
@@ -244,13 +317,13 @@ function processClassTable(tableRows) {
     let classes = new Array()
     let strDate
  
-    for (row of tableRows) {
+    for (let row of tableRows) {
         if (row.includes(`class="headText"`)) {
             //date header row
-            startOfDate = row.indexOf("headText") + 10
-            endOfDate = row.indexOf("</b>")
-            lengthOfDate = endOfDate - startOfDate
-            htmlDate = row.substr(startOfDate, lengthOfDate)
+            let startOfDate = row.indexOf("headText") + 10
+            let endOfDate = row.indexOf("</b>")
+            let lengthOfDate = endOfDate - startOfDate
+            let htmlDate = row.substr(startOfDate, lengthOfDate)
             strDate = htmlDate.replace('&nbsp;', ' ').replace('</span>', '').replace('&nbsp;', '')
             console.log('Processing classes for ', strDate)
         }
@@ -258,28 +331,28 @@ function processClassTable(tableRows) {
             //class row
             let thisClass = new Object()
             thisClass.date = strDate
-            rowData = row.split('</td>')
+            let rowData = row.split('</td>')
             if (rowData.length <= 2) {
                 console.log('No classes for ', strDate)
                 continue
             }
             //TD0 - time
-            timeStart = rowData[0].indexOf('&nbsp;')
+            let timeStart = rowData[0].indexOf('&nbsp;')
             thisClass.time = rowData[0].substr(timeStart).replace(/&nbsp;/g, '')
             //TD1 - sign-up button & slots inc. ID code
             if (rowData[1].indexOf('Open') !== -1) {
-                slotStart = rowData[1].indexOf(';Open') - 7
+                let slotStart = rowData[1].indexOf(';Open') - 7
                 thisClass.slots = parseInt(rowData[1].substr(slotStart, 2).replace(';', ''))
             }
             if (rowData[1].indexOf('name') !== -1) {
-                idStart = rowData[1].indexOf('name') + 6
+                let idStart = rowData[1].indexOf('name') + 6
                 thisClass.id = rowData[1].substr(idStart, 7)
             }
             //TD2 - class name
-            classStart = rowData[2].indexOf('c">') + 3
+            let classStart = rowData[2].indexOf('c">') + 3
             thisClass.name = rowData[2].substr(classStart).replace('</a>', '').replace('d>', '')
             //TD3 - coach
-            coachEnd = rowData[3].indexOf('<span') - 1
+            let coachEnd = rowData[3].indexOf('<span') - 1
             if (coachEnd > 0) {
                 thisClass.coach = rowData[3].substr(0, coachEnd).replace('<td>', '')
             } else {

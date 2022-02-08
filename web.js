@@ -7,6 +7,7 @@ const timezone = require('dayjs/plugin/timezone')
 dayjs.extend(customParseFormat)
 dayjs.extend(utc)
 dayjs.extend(timezone)
+const IS_OFFLINE = process.env.IS_OFFLINE;
 
 const q = require('./queue.js');
 const notif = require('./notify.js')
@@ -26,16 +27,28 @@ const urls = {
     'homeredir': 'https://clients.mindbodyonline.com/ASP/su1.asp?studioid=739798&tg=&vt=&lvl=&stype=&view=&trn=0&page=&catid=&prodid=&date=11%2f13%2f2021&classid=0&prodGroupId=&sSU=&optForwardingLink=&qParam=&justloggedin=&nLgIn=&pMode=0&loc=1'
 }
 
+
 async function getClasses(formattedDate) {
     //Formatted date is in MBO format i.e. 1/1/2022 or 12/12/2022
 
-    const browser = await chromium.puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath,
-        headless: chromium.headless,
-        ignoreHTTPSErrors: true
-    })
+    let chromiumArgs
+    
+    if (IS_OFFLINE === 'true') {
+        chromiumArgs = {
+            headless: true,
+            ignoreHTTPSErrors: true
+        }
+    } else {
+        chromiumArgs = {
+            args: chromium.args,
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath,
+            headless: chromium.headless,
+            ignoreHTTPSErrors: true
+        }
+    }
+
+    const browser = await chromium.puppeteer.launch(chromiumArgs)
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36')
     await page.goto(urls.notstaff);
@@ -129,7 +142,8 @@ async function book(bookingDetails) {
         const tds = Array.from(document.querySelectorAll('td'))
         return tds.map(td => td.innerText.trim())
     })
-
+    
+    console.log('Looking for ', b.classDate, " in ", dateHeaders)
     const dateOnPage = dateHeaders.find( (e) => e === b.classDate)
     if (!dateOnPage) {
         let formatparam = dayjs(b.parsedDT).tz('Asia/Singapore').format('DD/MM/YYYY')

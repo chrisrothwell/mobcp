@@ -22,8 +22,8 @@
     "serverless-http": "^2.7.0"
   },
   "devDependencies": {
-    "puppeteer": "^13.1.2",
+    "puppeteer": "^13.2.0",
     "serverless-dynamodb-local": "^0.2.40",
-    "serverless-offline": "^8.3.1"
+    "serverless-offline": "^8.4.0"
   }
 }

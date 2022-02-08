@@ -13,6 +13,7 @@ improve booking bot
 	a. take screenshot on timeout error
 	b. send error e-mail
 4. attach screenshots to e-mails
+5. Retry mechanism for full classes??
 
 improve calendar invitation
 
@@ -37,7 +38,8 @@ check https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/recognize-expanded-vol
 ONE TIME INST
 1. npm i
 2. npm i -g serverless
-3. eval "$(ssh-agent -s)" and ssh-add and copy id_ed25519 & id_ed25519.pub (maybe)
+3. eval "$(ssh-agent -s)"
+4. add key for gitlab (follow instr)
 4. sls plugin install serverless-dynamodb-local
 5. sls plugin install serverless-offline
 6. sls dynamodb install
@@ -45,7 +47,7 @@ ONE TIME INST
 9. sudo yum install -y chromium
 
 EVERY TIME (need to automate)
-7. export SERVERLESS_ACCESS_KEY=AKiTHgfMcZdsxyXA8W2e67xLMFhDM9PvpIAuwHrVvMXMO
+7. export SERVERLESS_ACCESS_KEY=xxx
 8. 
 CLOUD 9 TEST:
 

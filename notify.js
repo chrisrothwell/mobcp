@@ -126,7 +126,7 @@ async function failed(booking) {
         {
             from: "mobcp@chrisrothwell.com",
             to: recipients,
-            subject: "Booking failed - " + b.status,
+            subject: "Booking failed - " + b.pStatus,
             text: JSON.stringify(b) + ' ' + inviteDefault.urlBase + b.nid
         });
     } catch (e) {

@@ -159,13 +159,12 @@ async function book(bookingDetails) {
     console.log('found classes')
     let dateFound
 
+    console.log('checking if class is on the page')
     for (let thisClass of classes) {
-        console.log('checking ', thisClass)
         if (b.classDate === thisClass.date) {
             console.log('classes for this date are in the default page')
             dateFound = true
-        } else {
-            console.log(b.classDate, "not equal to", thisClass.date)
+            break
         }
     }
     

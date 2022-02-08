@@ -6,7 +6,7 @@ dayjs.extend(customParseFormat)
 
 const express = require('express');
 var cors = require('cors')
-const { getMaxListeners } = require('process');
+//const { getMaxListeners } = require('process');
 const app = express()
 
 var corsOptions = {
@@ -52,7 +52,7 @@ app.post('/queue', jsonParser, async (req, res) => {
     }
 
     //Validate the date & time
-    d = classDate.substr(4) + ' ' + classTime.substr(0,7) + " +08:00"
+    let d = classDate.substr(4) + ' ' + classTime.substr(0,7) + " +08:00"
     console.log('Attempting to parse ', d)
     let parsedDate = dayjs(d, "D MMMM YYYY h:mm Z")
     console.log(parsedDate.format())
@@ -64,10 +64,10 @@ app.post('/queue', jsonParser, async (req, res) => {
 
     // Register the new booking
     try {
-        newBooking = await q.newBooking(classDate, classTime, parsedDate, className, mboUsername, mboPassword)
+        let newBooking = await q.newBooking(classDate, classTime, parsedDate, className, mboUsername, mboPassword)
         res.status(200).json(newBooking)
-    } catch(e) {
-        console.log(e)
+    } catch(err) {
+        console.log(err)
         res.status(400).json({error: err.message})
     }
 })
@@ -110,12 +110,12 @@ app.get('/classes/:ddmmyyyy', async (req, res) => {
         return null
     }
     let dateInt = {
-        dd: parseInt(reqparam.substr(0, 2)),
-        mm: parseInt(reqparam.substr(2, 2)),
-        yyyy: yyyyInt = parseInt(reqparam.substr(4, 4))
+        dd: parseInt(reqparam.substr(0, 2),10),
+        mm: parseInt(reqparam.substr(2, 2),10),
+        yyyy: parseInt(reqparam.substr(4, 4),10)
     }
     console.log(dateInt)
-    validateDate = new Date(dateInt.yyyy, dateInt.mm - 1, dateInt.dd)
+    let validateDate = new Date(dateInt.yyyy, dateInt.mm - 1, dateInt.dd)
     if (isNaN(validateDate)) {
         res.status(400).json({ error: 'Unable to parse date.' })
         return null

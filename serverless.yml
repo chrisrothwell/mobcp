@@ -55,7 +55,7 @@ functions:
   cron:
     handler: cron.dailySchedule
     events:
-      - schedule: cron(0 1 * * ? *)
+      - schedule: cron(59 0 * * ? *)
       - schedule: cron(5 1 * * ? *)
       - schedule: cron(10 1 * * ? *)
     timeout: 300
@@ -78,6 +78,5 @@ resources:
         TableName: ${self:custom.DYTBL}
 
 plugins:
-#  - serverless-dynamodb-local
-#  - serverless-offline
-#  - serverless-plugin-chrome
+  - serverless-dynamodb-local
+  - serverless-offline

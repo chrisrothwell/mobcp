@@ -116,7 +116,7 @@ async function confirmed(booking) {
     return msgResp.messageId
 }
 
-async function failed(booking, reason) {
+async function failed(booking) {
     console.log('Sending notification for failed booking')
     const b = booking
     let msgResp
@@ -126,7 +126,7 @@ async function failed(booking, reason) {
         {
             from: "mobcp@chrisrothwell.com",
             to: recipients,
-            subject: "Booking failed - " + reason,
+            subject: "Booking failed - " + b.status,
             text: JSON.stringify(b) + ' ' + inviteDefault.urlBase + b.nid
         });
     } catch (e) {

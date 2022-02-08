@@ -256,14 +256,14 @@ async function book(bookingDetails) {
                     } catch (e) {
                         console.log('timeout waiting for a recognizable element after clicking the booking button.')
                         let screenshotPath = b.nid + '-clicked-booking-button.png'
-                        await page.screenshot({ path: screenshotPath });
-                        console.log('check the screenshot at ', screenshotPath)
+                        //await page.screenshot({ path: screenshotPath });
+                        //console.log('check the screenshot at ', screenshotPath)
                         throw(e)
                     }
                     
                     console.log('one of the promises resolved')
-                    let screenshotPath = b.nid + '-clicked-booking-button.png'
-                    await page.screenshot({ path: screenshotPath });
+                    //let screenshotPath = b.nid + '-clicked-booking-button.png'
+                    //await page.screenshot({ path: screenshotPath });
                     const isBookable = await page.evaluate(() => document.querySelector('#SubmitEnroll2')?.value)
                     const isWaitlistable = await page.evaluate(() => document.querySelector('input[name="AddWLButton]')?.value)
                     if (isBookable) {

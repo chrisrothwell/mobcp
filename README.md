@@ -4,16 +4,17 @@ TODO:
 
 improve booking bot
 
-1. Test waitlist feature
-2. take screenshots & upload to s3
+1. Change minsBeforeRelease to 2mins and retryTimeoutMins to 3mins and test that cron at 8.59am will fire and retry regularly for a quick booking at 9am
+2. Test waitlist feature
+3. take screenshots & upload to s3
 	a. unsuccessful booking (no slots)
 	b. successful booking
 	c. successful waitlist
-3. error handling at cron.js or web.js
+4. error handling at cron.js or web.js
 	a. take screenshot on timeout error
 	b. send error e-mail
-4. attach screenshots to e-mails
-5. Retry mechanism for full classes??
+5. attach screenshot s3 links to e-mails
+6. Retry mechanism for full classes??
 
 improve calendar invitation
 

@@ -6,8 +6,8 @@ function fetchClasses() {
     let currentdate = new Date(document.getElementById("ddmmyyyy").value)
     day = currentdate.getDate()
     month = currentdate.getMonth() + 1
-    if (day < 10) { daystr = '0' + day }
-    if (month < 10) { monthstr = '0' + month }
+    if (day < 10) { daystr = '0' + day } else { daystr = day }
+    if (month < 10) { monthstr = '0' + month } else { monthstr = month }
     ddmmyyyy = daystr + monthstr + currentdate.getFullYear()
     fetch(BASE_URL + 'classes/' + ddmmyyyy)
     .then(response => response.json())

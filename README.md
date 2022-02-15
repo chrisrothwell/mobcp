@@ -5,6 +5,7 @@ TODO:
 improve booking bot
 
 1. Change minsBeforeRelease to 2mins and retryTimeoutMins to 3mins and test that cron at 8.59am will fire and retry regularly for a quick booking at 9am
+(currently some problem with the logic for generating classesBefore)
 2. Test waitlist feature
 3. take screenshots & upload to s3
 	a. unsuccessful booking (no slots)

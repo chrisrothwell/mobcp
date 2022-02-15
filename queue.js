@@ -26,7 +26,7 @@ const startBooking = {
     'daysBefore': 2,
     'timeReleasedHr': 9,
     'timeReleasedMin': 0,
-    'minsBeforeRelease': 0,
+    'minsBeforeRelease': 2,
     'retryTimeoutMins': 1
 }
 

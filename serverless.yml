@@ -78,5 +78,5 @@ resources:
         TableName: ${self:custom.DYTBL}
 
 plugins:
-  #- serverless-dynamodb-local
-  #- serverless-offline
+  - serverless-dynamodb-local
+  - serverless-offline

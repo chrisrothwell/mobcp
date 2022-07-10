@@ -11,7 +11,7 @@ let transporter = nodemailer.createTransport({
 const ical = require('ical-generator');
 const dayjs = require('dayjs')
 
-const recipients = 'me@chrisrothwell.com; chrisrothwell@nets.com.sg'
+const recipients = 'me@chrisrothwell.com; chris.rothwell@singtel.com'
 const inviteDefault = {
     'bufferBeforeMins': 30,
     'bufferAfterMins': 30,
@@ -160,6 +160,67 @@ async function test() {
             `
         }
         );
+    } catch (e) {
+        console.log(e)
+        throw new Error(e)
+    }
+
+    console.log(msgResp.envelope)
+    console.log(msgResp.messageId)
+    return msgResp.messageId
+}
+
+async function reqTwoFA(req) {
+    console.log('Sending notification for 2FA')
+    const d = req
+    let msgResp
+    let att
+    if (d.captcha) {
+        att = [{
+            filename: 'captcha.' + d.captchaExt,
+            content: d.captcha
+        }]
+    }
+    
+    try {
+        msgResp = await transporter.sendMail(
+        {
+            from: "mobcp@chrisrothwell.com",
+            to: d.recipients,
+            subject: "2FA required - " + d.subj,
+            text: `2FA is required for a bot to proceed.
+            
+            2FA requirements: ${JSON.stringify(d.factors)}
+            URL to provide: XXFILLUPLATER
+            `,
+            attatchments: att
+        });
+    } catch (e) {
+        console.log(e)
+        throw new Error(e)
+    }
+
+    console.log(msgResp.envelope)
+    console.log(msgResp.messageId)
+    return msgResp.messageId
+}
+
+async function failTwoFA(req) {
+    console.log('Sending notification for failed 2FA')
+    const d = req
+    let msgResp
+    
+    try {
+        msgResp = await transporter.sendMail(
+        {
+            from: "mobcp@chrisrothwell.com",
+            to: d.recipients,
+            subject: "2FA Timeout - " + d.subj,
+            text: `2FA timed out.
+            
+            2FA requirements: ${JSON.stringify(d.factors)}
+            `
+        });
     } catch (e) {
         console.log(e)
         throw new Error(e)

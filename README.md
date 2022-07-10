@@ -5,19 +5,19 @@ TODO:
 improve booking bot
 
 1. Change minsBeforeRelease to 2mins and retryTimeoutMins to 3mins and test that cron at 8.59am will fire and retry regularly for a quick booking at 9am
-2. check why it only adds 1 day instead of 2 days per config when before 9am (something with timezone)
-4. check why after processing booking the item is still being compared
-5. In case of timeout AFTER pressing button, the function will correctly error but will keep retrying resulting in a NO BUTTON issue.  Add a check during retry to determine if the class is already confirmed.
-6. Test waitlist feature
-7. take screenshots & upload to s3
+2. check why it only adds 1 day instead of 2 days per config when before 9am (something with timezone) - maybe mixed config as its in two places
+3. check why after processing booking the item is still being compared
+4. In case of timeout AFTER pressing button, the function will correctly error but will keep retrying resulting in a NO BUTTON issue. Add a check during retry to determine if the class is already confirmed.
+5. Test waitlist feature
+6. take screenshots & upload to s3
 	a. unsuccessful booking (no slots)
 	b. successful booking
 	c. successful waitlist
-4. error handling at cron.js or web.js
+7. error handling at cron.js or web.js
 	a. take screenshot on timeout error
 	b. send error e-mail
-5. attach screenshot s3 links to e-mails
-6. Retry mechanism for full classes??
+8. attach screenshot s3 links to e-mails
+9. Retry mechanism for full classes??
 
 improve calendar invitation
 
@@ -52,7 +52,11 @@ ONE TIME INST
 
 EVERY TIME (need to automate)
 7. export SERVERLESS_ACCESS_KEY=xxx
-8. 
+8. if sls offline start is not working, check serverless.yml and make sure the plugins aren't commented out (comment out for deployment)
+9. maybe need this:
+   git config --global user.email "me@chrisrothwell.com"
+   git config --global user.name "Chris Rothwell"
+
 CLOUD 9 TEST:
 
 1. GET queue: curl "http://localhost:3000/dev/queue"

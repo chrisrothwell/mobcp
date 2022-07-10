@@ -12,11 +12,12 @@ const IS_OFFLINE = process.env.IS_OFFLINE;
 const q = require('./queue.js');
 const notif = require('./notify.js')
 
+// NB - this is in two places - web and queue.  Think about moving this to a config file
 const startBooking = {
-    'daysBefore': 3,
+    'daysBefore': 2,
     'timeReleasedHr': 9,
     'timeReleasedMin': 0,
-    'minsBeforeRelease': 5,
+    'minsBeforeRelease': 2,
     'retryTimeoutMins': 1
 }
 

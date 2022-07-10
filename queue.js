@@ -22,11 +22,12 @@ if (IS_OFFLINE === 'true') {
   dynamoDb = new AWS.DynamoDB.DocumentClient();
 };
 
+// NB - this is in two places - web and queue.  Think about moving this to a config file
 const startBooking = {
     'daysBefore': 2,
     'timeReleasedHr': 9,
     'timeReleasedMin': 0,
-    'minsBeforeRelease': 0,
+    'minsBeforeRelease': 2,
     'retryTimeoutMins': 1
 }
 
@@ -163,17 +164,20 @@ async function getQueue() {
 
  async function getBookableQItems() {
     console.log('Getting queue items to try and book')
-    q = await getQueue()
+    let q = await getQueue()
     if (q.message === 'No Items in Queue') { 
         console.log('getQueueDetails promise rejects')
         return new Promise(reject => {reject(new Error('No Items in Queue'))})
     }
 
-    let today = dayjs().tz('Asia/Singapore')
+
+    // TODO - ensure that the logic below creates the correct classesBefore by adding the correct number of days
+    
+    let today = dayjs().tz('Asia/Singapore')  // Try at 8.59am and 9.01am SGT... is today default to UTC?
     let classesBefore
     console.log(startBooking)
     if ( today.hour() >= startBooking.timeReleasedHr && today.minute() >= startBooking.timeReleasedMin - startBooking.minsBeforeRelease ) {
-        console.log('trying to add days ', startBooking.daysBefore)
+        console.log('trying to add days ', startBooking.daysBefore)  // This is a config variable
         classesBefore = dayjs().tz('Asia/Singapore').endOf('day').add(startBooking.daysBefore, 'day')
     } else {
         console.log('trying to add days ', startBooking.daysBefore - 1)
@@ -183,7 +187,7 @@ async function getQueue() {
     console.log('today is', today.format(), ' eligible to book classes starting before ', classesBefore.format())
 
     let classesToBook = new Array()
-    for (eachNid of q) {
+    for (let eachNid of q) {
         console.log('comparing ', eachNid)
         let qDetails = await getBookingDetails(eachNid)
         if ((qDetails.pStatus === 'NEW' || qDetails.pStatus === 'QUEUED') && dayjs(qDetails.parsedDT).isBefore(classesBefore) && dayjs(qDetails.parsedDT).isAfter(today)) {
@@ -237,5 +241,67 @@ async function getQueue() {
         'booking': booking
     }
  }
+ 
+  async function reqTwoFA(req) {
+     //Write the record to Dynamodb
+    let nid = nanoid()
+    const params = {
+        TableName: DYTBL,
+        Item: {
+            nid: nid,
+            captchaExt: 'png',
+            subj: 'QMS 2FA',
+            factors: ['smsotp', 'captcha'],
+            created: dayjs().toISOString(),
+            twoFAStatus: 'REQUESTED',
+            
+        },
+    };
+
+    console.log('adding to db')
+    console.log(params)
+    let addDB = await dynamoDb.put(params).promise()
+    console.log('added to db ', addDB)
+
+    //return the details.
+    return addDB
+ }
+ 
+   async function checkTwoFA(nid) {
+     //Check if 2FA responses have been provided and return
+     const params = {
+        TableName: DYTBL,
+        Key: {
+            nid: nid,
+        },
+    };
+
+    console.log(params)
+    let query = await dynamoDb.get(params).promise()
+    console.log(query)
+    
+    if (query.userInput) {
+        return query.userInput
+    } else {
+        return null
+    }
+ }
+ 
+ async function setTwoFA(nid, userInput) {
+     //Set 2FA response provided by user
+    var params = {
+        TableName: DYTBL,
+        Key:{
+            "nid": nid
+        },
+        UpdateExpression: "set userInput = :s",
+        ExpressionAttributeValues:{
+            ":s":userInput,
+        },
+        ReturnValues:"UPDATED_NEW"
+    };
+    return dynamoDb.update(params).promise()
+ }
+
 
  module.exports = {getQueue, getQueueDetails, getBookingDetails, removeFromQueue, clearQueue, newBooking, getBookableQItems, updateNidStatus}

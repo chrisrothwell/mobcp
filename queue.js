@@ -304,4 +304,4 @@ async function getQueue() {
  }
 
 
- module.exports = {getQueue, getQueueDetails, getBookingDetails, removeFromQueue, clearQueue, newBooking, getBookableQItems, updateNidStatus}
+ module.exports = {getQueue, getQueueDetails, getBookingDetails, removeFromQueue, clearQueue, newBooking, getBookableQItems, updateNidStatus, reqTwoFA}

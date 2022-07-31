@@ -18,7 +18,7 @@
     "ical-generator": "^3.2.1",
     "nanoid": "^3.1.30",
     "nodemailer": "^6.7.2",
-    "puppeteer-core": "^13.1.2",
+    "puppeteer-core": "~10.1.0",
     "serverless-http": "^2.7.0"
   },
   "devDependencies": {

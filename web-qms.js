@@ -6,7 +6,6 @@ const notif = require('./notify.js')
 const dayjs = require('dayjs')
 const twoFATimeout = 5 //number of mnins to wait for user input on 2FA
 
-/* 
 const customParseFormat = require('dayjs/plugin/customParseFormat')
 const utc = require('dayjs/plugin/utc')
 const timezone = require('dayjs/plugin/timezone')
@@ -14,33 +13,22 @@ dayjs.extend(customParseFormat)
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
-
-
-
-// NB - this is in two places - web and queue.  Think about moving this to a config file
-const startBooking = {
-    'daysBefore': 2,
-    'timeReleasedHr': 9,
-    'timeReleasedMin': 0,
-    'minsBeforeRelease': 2,
-    'retryTimeoutMins': 1
-}
-
-*/
-
 const creds = {
     'username': 'chrisr',
     'password': 'cUg953ZQ97Q!CaF'
 }
 
 const urls = {
-    'loginpage': 'https://qms.avs.gov.sg/Public/Login.aspx'
+    'loginpage': 'https://qms.avs.gov.sg/Public/Login.aspx',
+    'captcha': 'https://qms.avs.gov.sg/CustomControls/CaptchaControl.aspx'
 }
 
-async function chkAvail(params) {
-    const p = params
-    console.log('begin check availability for  ', p)
+const qfaForm = {
+    'countryOfExport': 'Malaysia',
+    'numberOfCats': 1
+}
 
+async function chkAvail() {
     let chromiumArgs
     
     if (IS_OFFLINE === 'true') {
@@ -65,39 +53,39 @@ async function chkAvail(params) {
     console.log('waiting for selector')
     await page.waitForSelector('#txtLoginName', { visible: true, timeout: 10000 })
     console.log('username box there')
-    await page.evaluate((b) => { document.querySelector('#txtLoginName').value = creds.username }, p)
-    await page.evaluate((b) => { document.querySelector('#txtPassword').value = creds.password }, p)
+    await page.evaluate((creds) => { document.querySelector('#txtLoginName').value = creds.username }, creds)
+    await page.evaluate((creds) => { document.querySelector('#txtPassword').value = creds.password }, creds)
     console.log('username entered')
     await page.click('#btnLogin')
     console.log('button clicked')
-    const loginPromises = [
-        page.waitForSelector('#ctl00$MainContent$SendSMSButton', { visible: true, timeout: 10000}),
-        page.waitForSelector('#ctl00_MainContent_imgCaptcha', { visible: true, timeout: 10000})
-    ]
-    await Promise.race(loginPromises)
-    const loginError = await page.evaluate(() => document.querySelector('#lblError')?.textContent)
-    if ( loginError ) {
-        q.updateNidStatus(p.nid, 'UNABLE TO LOGIN')
-        q.removeFromQueue(p.nid)
-        p.pStatus = loginError
-        notif.failed(p)
+    
+    let captchaResp
+    try {
+        captchaResp = await page.waitForResponse(urls.captcha, { timeout: 10000 })
+    } catch {
+        console.log('Captcha did not load')
+        const loginError = await page.evaluate(() => document.querySelector('#lblError')?.textContent)
+        notif.qmsloginfail(creds, loginError)
         await browser.close();
-        return null
+        return new Promise(reject => {reject(new Error('Failed initial QMS login'))})
     }
+    
     console.log('login action completed, 2FA page displayed')
     
     // FIRST TWOFA STEP - CONFIRM CAPTCHA
     
+    let captchaBuffer = await captchaResp.buffer()
+    
     let firstTwoFARequest = {
-        captcha: document.querySelector('#ctl00_MainContent_imgCaptcha'),
+        captchaBuffer: captchaBuffer,
         captchaExt: 'png',
         subj: 'QMS 2FA - first stage',
         factors: ['captcha'],
     }
     
 
-    firstTwoFARequest.nid = await q.req2FA(firstTwoFARequest)
-    notif.req2FA(firstTwoFARequest)
+    firstTwoFARequest.nid = await q.reqTwoFA(firstTwoFARequest)
+    notif.reqTwoFA(firstTwoFARequest)
     
     console.log('notification sent for first 2FA, awaiting user to enter 2FA')
     const waitForFirst2FAUntil = dayjs().add(twoFATimeout,'minutes')
@@ -130,8 +118,8 @@ async function chkAvail(params) {
                     factors: ['SMSOTP','captcha'],
                 }
             
-                secondTwoFARequest.nid = await q.req2FA(secondTwoFARequest)
-                notif.req2FA(secondTwoFARequest)
+                secondTwoFARequest.nid = await q.reqTwoFA(secondTwoFARequest)
+                notif.reqTwoFA(secondTwoFARequest)
     
                 console.log('notification sent for second 2FA, awaiting user to enter 2FA')
                 const waitForSecond2FAUntil = dayjs().add(twoFATimeout,'minutes')
@@ -146,22 +134,61 @@ async function chkAvail(params) {
                         page.click('#ctl00$MainContent$SMSSubmitButton')
                         console.log('sms and captcha entered and button clicked')
                         const postFirst2FAPromises = [
-                            page.waitForSelector('.welcome', { visible: true, timeout: 10000}),
-                            page.waitForSelector('#ctl00_spTitle', { visible: true, timeout: 10000}),
+                            page.waitForSelector('#ctl00_spTitle', { visible: true, timeout: 10000})
                         ]
-                        await Promise.race(loginPromises)
+                        await Promise.race(postFirst2FAPromises)
                         console.log('One of the promises resolved ', postFirst2FAPromises)
                         // WE COULD HANDLE ERRORS HERE BUT NOT GOING TO
                         // NOW CHECK FOR AVAILABILITY
-                        /*
-                            1. CLICK ctl00_MainContent_lnkLargeMammals
-                            2. CLICK ctl00$MainContent$btnContinue
-                            3. FILL FORM FOR 1 CAT FAN
-                            4. CHECK AVAILABILITY FROM TODAY (4 days from now?) and LOOP EVERY 29 DAYS UNTIL INPUT ID IS THERE: ctl00_MainContent_AvailablitySection_ctl00_rdlAvailableDates_0
-                            5. CLICK CLEAR
-                            6. REPEAT 3/4 FOR ONE CAT AIRCON
-                            9. SEND NOTIF ON EARLIEST AVAILABLE DATE
-                        */
+                        await page.click('#ctl00_MainContent_lnkLargeMammals')
+                        await page.waitForSelector('#ctl00$MainContent$btnContinue', { visible: true, timeout: 10000})
+                        await page.click('#ctl00$MainContent$btnContinue')
+                        
+                        
+                        let earliestAvailableDateFan
+                        let earliestAvailableDateAC
+                        let tryDate = dayjs().tz('Asia/Singapore')
+                        let tryType = 'fan'
+                        
+                        while (!earliestAvailableDateFan && !earliestAvailableDateAC && tryDate.isBefore(dayjs().tz('Asia/Singapore').add(1,'year')) ) {
+                            console.log('Trying to book for ', tryType, ' with date ', tryDate.format())
+                            await page.evaluate((b) => { document.querySelector('#ctl00$MainContent$secReservationInitialSection$ctl00$ddlCountryOfExport').value = qfaForm.countryOfExport }, p)
+                            await page.evaluate((b) => { document.querySelector('#ctl00$MainContent$secReservationInitialSection$ctl00$txtDateOfArrival').value = tryDate.format('DD/MM/YYYY') }, p)
+                            await page.evaluate((b) => { document.querySelector('#ctl00$MainContent$secReservationInitialSection$ctl00$txtNoOfCats').value = qfaForm.numberOfCats }, p)
+                            if (tryType === 'ac') { await page.evaluate((b) => { document.querySelector('#ctl00$MainContent$secReservationInitialSection$ctl00$txtNoOfACCaterries').value = qfaForm.numberOfCats }, p) }
+                            if (tryType === 'fan') { await page.evaluate((b) => { document.querySelector('#ctl00$MainContent$secReservationInitialSection$ctl00$txtNoOfFanCaterries').value = qfaForm.numberOfCats }, p) }
+                            await page.evaluate((b) => { document.querySelector('#ctl00_MainContent_secReservationInitialSection_ctl00_rdbLstImportType_0').value = true }, p)
+                            await page.click('#ctl00$MainContent$secReservationInitialSection$ctl00$btnCheckAvailablity')
+                            await page.waitForSelector('#ctl00$MainContent$btnContinue', { visible: true, timeout: 10000})
+                            const postFormSubmitPromises = [
+                                page.waitForSelector('#ctl00_MainContent_divNewUnsuccess', { visible: true, timeout: 10000}),
+                                page.waitForSelector('#ctl00_MainContent_AvailablitySection_ctl00_rdlAvailableDates_0', { visible: true, timeout: 10000})
+                            ]
+                            await Promise.race(postFormSubmitPromises)
+                            console.log('One of the promises resolved ', postFormSubmitPromises)
+                            console.log('DO SOMETHING HERE TO EVALUTE IF ITS THE FIRST OR SECOND PROMISE RESOLVING')
+                            if (secondproimseresolved && tryType === 'fan') {
+                                
+                                earliestAvailableDateFan = await page.evaluate(() => document.querySelector('label').textContent)
+                                console.log('fan room found for ', earliestAvailableDateFan)
+                                console.log('retrying for AC')
+                                tryType = 'ac'
+                                tryDate = dayjs().tz('Asia/Singapore')
+                            } else if (secondpromiseresolved && tryType === 'ac') {
+                                earliestAvailableDateAC = await page.evaluate(() => document.querySelector('label').textContent)
+                                console.log('ac room found for ', earliestAvailableDateAC)
+                            } else {
+                                console.log('no availability, adding 30 days')
+                                tryDate.add(30,'day')
+                            }
+                        }
+                        console.log('Earliest availability for fan room is ', earliestAvailableDateFan)
+                        console.log('Earliest availability for ac room is ', earliestAvailableDateAC)
+                        
+                        let notifoutput = notif.qmsavail(earliestAvailableDateFan, earliestAvailableDateAC)
+                        await browser.close();
+                        return new Promise(resolve => {resolve(notifoutput)})
+
                     } else {
                         console.log('no reply to second 2fa request, retry in 10 seconds')
                         delay(10000)
@@ -201,5 +228,4 @@ async function chkAvail(params) {
     });
  }
 
- module.exports = {getClasses, book}
- //module.exports = {checkBookingValidity}
+ module.exports = {chkAvail}

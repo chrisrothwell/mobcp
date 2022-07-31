@@ -172,28 +172,29 @@ async function test() {
 
 async function reqTwoFA(req) {
     console.log('Sending notification for 2FA')
+    console.log(req)
     const d = req
     let msgResp
-    let att
-    if (d.captcha) {
-        att = [{
-            filename: 'captcha.' + d.captchaExt,
-            content: d.captcha
-        }]
-    }
-    
+
     try {
         msgResp = await transporter.sendMail(
         {
             from: "mobcp@chrisrothwell.com",
-            to: d.recipients,
+            to: recipients,
             subject: "2FA required - " + d.subj,
             text: `2FA is required for a bot to proceed.
             
             2FA requirements: ${JSON.stringify(d.factors)}
             URL to provide: XXFILLUPLATER
             `,
-            attatchments: att
+            attatchments: [{
+                filename: 'captcha.jpg',
+                content: d.captchaBuffer,
+                contentType: 'image/jpeg'
+            }, {
+                filename: 'text1.txt',
+                content: 'hello world!'}
+            ]
         });
     } catch (e) {
         console.log(e)
@@ -214,7 +215,7 @@ async function failTwoFA(req) {
         msgResp = await transporter.sendMail(
         {
             from: "mobcp@chrisrothwell.com",
-            to: d.recipients,
+            to: recipients,
             subject: "2FA Timeout - " + d.subj,
             text: `2FA timed out.
             
@@ -230,4 +231,55 @@ async function failTwoFA(req) {
     console.log(msgResp.messageId)
     return msgResp.messageId
 }
-module.exports = {queued, confirmed, failed, test}
+
+async function qmsavail(fan, ac) {
+    console.log('Sending notification for available dates')
+    let msgResp
+    
+    try {
+        msgResp = await transporter.sendMail(
+        {
+            from: "mobcp@chrisrothwell.com",
+            to: recipients,
+            subject: "Earliest available dates on QMS",
+            text: `
+            FAN Availability: ${fan}
+            AC Availability: ${ac}
+            `
+        });
+    } catch (e) {
+        console.log(e)
+        throw new Error(e)
+    }
+
+    console.log(msgResp.envelope)
+    console.log(msgResp.messageId)
+    return msgResp.messageId
+}
+
+async function qmsloginfail(creds, loginError) {
+    console.log('Sending notification for qms login fail')
+    let msgResp
+    
+    try {
+        msgResp = await transporter.sendMail(
+        {
+            from: "mobcp@chrisrothwell.com",
+            to: recipients,
+            subject: "QMS login fail",
+            text: `Failed for username and password
+            username: ${creds.username}
+            password: <redcated>
+            error: ${loginError}`
+        });
+    } catch (e) {
+        console.log(e)
+        throw new Error(e)
+    }
+
+    console.log(msgResp.envelope)
+    console.log(msgResp.messageId)
+    return msgResp.messageId
+}
+
+module.exports = {queued, confirmed, failed, test, reqTwoFA, failTwoFA, qmsloginfail, qmsavail}

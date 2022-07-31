@@ -51,7 +51,7 @@ ONE TIME INST
 9. sudo yum install -y chromium
 
 EVERY TIME (need to automate)
-7. export SERVERLESS_ACCESS_KEY=xxx
+7. export SERVERLESS_ACCESS_KEY=AKiTHgfMcZdsxyXA8W2e67xLMFhDM9PvpIAuwHrVvMXMO
 8. if sls offline start is not working, check serverless.yml and make sure the plugins aren't commented out (comment out for deployment)
 9. maybe need this:
    git config --global user.email "me@chrisrothwell.com"

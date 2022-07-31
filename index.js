@@ -18,6 +18,7 @@ const web = require('./web.js')
 const q = require('./queue.js')
 const cron = require('./cron.js') // for manual triggering
 const notify = require('./notify.js') // for manual triggering
+const webqms = require('./web-qms.js') // for manual triggering
 
 app.use(bodyParser.json());
 app.use(cors(corsOptions))
@@ -126,6 +127,18 @@ app.get('/classes/:ddmmyyyy', async (req, res) => {
     const classes = await web.getClasses(formatParam)  
     res.status(200).json(classes)
     return null
+})
+
+app.get('/qms/avail', async (req, res) => {
+// To manually trigger the cron if required
+    try {
+        let output = await webqms.chkAvail()
+        console.log(output)
+        res.status(200).send()
+    } catch(err) {
+        res.status(400).json({ error: err.message });
+        return null
+    }
 })
 
 app.get('/test/cron', async (req, res) => {

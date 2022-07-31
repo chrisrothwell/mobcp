@@ -7,7 +7,7 @@ phases:
       - npm install --silent --no-progress -g serverless@2
   pre_build:
     commands:
-      - npm install --no-progress --silent
+      - npm install
   build:
     commands:
       - mkdir -p target/dev

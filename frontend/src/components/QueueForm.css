@@ -1,0 +1,46 @@
+.queue-form {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.form-group input:disabled {
+  background-color: #f5f5f5;
+}
+
+.queue-form button {
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.queue-form button:hover {
+  background-color: #45a049;
+}
+
+.queue-form button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+} 

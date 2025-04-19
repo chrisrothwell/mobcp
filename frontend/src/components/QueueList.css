@@ -1,0 +1,38 @@
+.queue-list {
+  margin: 20px 0;
+}
+
+.queue-list table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.queue-list th,
+.queue-list td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.queue-list th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.queue-list tr:hover {
+  background-color: #f5f5f5;
+}
+
+.queue-list button {
+  padding: 5px 10px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.queue-list button:hover {
+  background-color: #da190b;
+} 
